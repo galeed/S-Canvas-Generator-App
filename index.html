@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canvas Studio — Spotify for Artists</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap');
+
+:root {
+–green: #1DB954;
+–green-dim: #17a349;
+–black: #0a0a0a;
+–dark: #111111;
+–panel: #181818;
+–panel2: #1e1e1e;
+–border: #2a2a2a;
+–text: #e8e8e8;
+–muted: #888;
+–accent: #ff4d6d;
+–gold: #f5c842;
+}
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: ‘Syne’, sans-serif;
+background: var(–black);
+color: var(–text);
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* HEADER */
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 18px 32px;
+border-bottom: 1px solid var(–border);
+background: var(–dark);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+.logo {
+display: flex;
+align-items: center;
+gap: 10px;
+font-size: 1.1rem;
+font-weight: 800;
+letter-spacing: -0.5px;
+}
+
+.logo svg { width: 28px; height: 28px; }
+
+.logo span { color: var(–green); }
+
+.header-tag {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.65rem;
+color: var(–muted);
+letter-spacing: 2px;
+text-transform: uppercase;
+}
+
+/* LAYOUT */
+.app {
+display: grid;
+grid-template-columns: 320px 1fr 280px;
+height: calc(100vh - 62px);
+}
+
+/* SIDEBAR LEFT */
+.sidebar {
+background: var(–panel);
+border-right: 1px solid var(–border);
+display: flex;
+flex-direction: column;
+overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(–border); border-radius: 2px; }
+
+.section {
+padding: 20px;
+border-bottom: 1px solid var(–border);
+}
+
+.section-title {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.6rem;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 14px;
+}
+
+/* UPLOAD ZONE */
+.upload-zone {
+border: 2px dashed var(–border);
+border-radius: 8px;
+padding: 28px 16px;
+text-align: center;
+cursor: pointer;
+transition: all 0.2s;
+position: relative;
+overflow: hidden;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+border-color: var(–green);
+background: rgba(29,185,84,0.05);
+}
+
+.upload-zone input[type=“file”] {
+position: absolute;
+inset: 0;
+opacity: 0;
+cursor: pointer;
+}
+
+.upload-icon { font-size: 2rem; margin-bottom: 8px; }
+
+.upload-text {
+font-size: 0.78rem;
+color: var(–muted);
+line-height: 1.5;
+}
+
+.upload-text strong { color: var(–text); }
+
+/* FILTERS GRID */
+.filters-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+}
+
+.filter-btn {
+position: relative;
+border: 1px solid var(–border);
+border-radius: 6px;
+background: var(–panel2);
+cursor: pointer;
+overflow: hidden;
+transition: all 0.2s;
+aspect-ratio: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 4px;
+padding: 8px;
+}
+
+.filter-btn:hover { border-color: var(–muted); }
+
+.filter-btn.active {
+border-color: var(–green);
+background: rgba(29,185,84,0.08);
+}
+
+.filter-preview {
+width: 48px;
+height: 48px;
+border-radius: 4px;
+background: linear-gradient(135deg, #333, #555);
+overflow: hidden;
+position: relative;
+}
+
+.filter-swatch {
+width: 100%;
+height: 100%;
+background: linear-gradient(135deg, #8b4513, #d2691e, #f4a460);
+}
+
+/* filter swatch styles */
+.swatch-none { background: linear-gradient(135deg, #4a9eff, #f4a460, #7ecf34); }
+.swatch-vintage { background: linear-gradient(135deg, #c8a97a, #a07050, #7a5a3a); filter: sepia(0.5); }
+.swatch-noir { background: linear-gradient(135deg, #111, #555, #111); }
+.swatch-vivid { background: linear-gradient(135deg, #ff2266, #00eeff, #aaff00); }
+.swatch-faded { background: linear-gradient(135deg, #c9b4a8, #a8b4c9, #c9c8a8); opacity: 0.8; }
+.swatch-neon { background: linear-gradient(135deg, #0d0221, #ff00ff, #00ffff); }
+.swatch-matte { background: linear-gradient(135deg, #8a7a6a, #6a7a8a, #7a8a6a); }
+.swatch-golden { background: linear-gradient(135deg, #f5c842, #c8860a, #f5c842); }
+.swatch-cold { background: linear-gradient(135deg, #2244aa, #88aadd, #aaccff); }
+.swatch-warm { background: linear-gradient(135deg, #ff8800, #ffcc44, #ff4400); }
+.swatch-dreamy { background: linear-gradient(135deg, #ffaacc, #aaccff, #ccffaa); }
+.swatch-dark { background: linear-gradient(135deg, #050510, #1a0a20, #0a1020); }
+
+.filter-label {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.55rem;
+letter-spacing: 1px;
+text-transform: uppercase;
+color: var(–muted);
+text-align: center;
+}
+
+.filter-btn.active .filter-label { color: var(–green); }
+
+/* INTENSITY SLIDER */
+.slider-row {
+display: flex;
+flex-direction: column;
+gap: 8px;
+margin-top: 6px;
+}
+
+.slider-label {
+display: flex;
+justify-content: space-between;
+font-family: ‘Space Mono’, monospace;
+font-size: 0.6rem;
+color: var(–muted);
+letter-spacing: 1px;
+text-transform: uppercase;
+}
+
+.slider-label span:last-child { color: var(–green); }
+
+input[type=“range”] {
+width: 100%;
+height: 3px;
+border-radius: 2px;
+background: var(–border);
+outline: none;
+-webkit-appearance: none;
+cursor: pointer;
+}
+
+input[type=“range”]::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 14px;
+height: 14px;
+border-radius: 50%;
+background: var(–green);
+cursor: pointer;
+transition: transform 0.15s;
+}
+
+input[type=“range”]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+/* CENTER CANVAS AREA */
+.canvas-area {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+background: #0d0d0d;
+position: relative;
+overflow: hidden;
+}
+
+.canvas-bg-grid {
+position: absolute;
+inset: 0;
+background-image:
+linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+background-size: 40px 40px;
+}
+
+.canvas-wrapper {
+position: relative;
+z-index: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 16px;
+}
+
+.canvas-frame {
+position: relative;
+border: 1px solid var(–border);
+border-radius: 4px;
+overflow: hidden;
+box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+/* Spotify Canvas ratio = 9:16 */
+#mainCanvas {
+display: block;
+max-height: calc(100vh - 200px);
+max-width: calc((100vh - 200px) * 0.5625);
+}
+
+.canvas-placeholder {
+width: 270px;
+height: 480px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 12px;
+color: var(–muted);
+background: var(–panel);
+}
+
+.canvas-placeholder .icon { font-size: 3rem; opacity: 0.3; }
+.canvas-placeholder p { font-size: 0.78rem; text-align: center; line-height: 1.6; opacity: 0.5; }
+
+.canvas-info {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.6rem;
+color: var(–muted);
+letter-spacing: 2px;
+text-transform: uppercase;
+}
+
+/* PLAYBACK BAR for video */
+.playback-bar {
+display: flex;
+align-items: center;
+gap: 12px;
+width: 100%;
+max-width: 320px;
+padding: 0 8px;
+}
+
+.play-btn {
+width: 32px;
+height: 32px;
+border-radius: 50%;
+background: var(–green);
+border: none;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: transform 0.15s, background 0.15s;
+flex-shrink: 0;
+}
+
+.play-btn:hover { transform: scale(1.08); background: #1ed760; }
+
+.playback-track {
+flex: 1;
+height: 3px;
+background: var(–border);
+border-radius: 2px;
+position: relative;
+cursor: pointer;
+}
+
+.playback-fill {
+height: 100%;
+background: var(–green);
+border-radius: 2px;
+width: 0%;
+transition: width 0.1s linear;
+}
+
+.time-label {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.6rem;
+color: var(–muted);
+min-width: 36px;
+text-align: right;
+}
+
+/* RIGHT PANEL */
+.right-panel {
+background: var(–panel);
+border-left: 1px solid var(–border);
+display: flex;
+flex-direction: column;
+overflow-y: auto;
+}
+
+.right-panel::-webkit-scrollbar { width: 4px; }
+.right-panel::-webkit-scrollbar-thumb { background: var(–border); }
+
+/* CANVAS SIZE OPTIONS */
+.size-options {
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.size-option {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 10px 12px;
+border: 1px solid var(–border);
+border-radius: 6px;
+background: var(–panel2);
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.size-option:hover { border-color: var(–muted); }
+.size-option.active { border-color: var(–green); background: rgba(29,185,84,0.06); }
+
+.size-icon {
+width: 20px;
+height: 28px;
+border: 1.5px solid currentColor;
+border-radius: 2px;
+color: var(–muted);
+flex-shrink: 0;
+}
+
+.size-option.active .size-icon { color: var(–green); }
+
+.size-info { flex: 1; }
+
+.size-name {
+font-size: 0.78rem;
+font-weight: 600;
+color: var(–text);
+margin-bottom: 1px;
+}
+
+.size-dims {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.55rem;
+color: var(–muted);
+letter-spacing: 1px;
+}
+
+/* EXPORT OPTIONS */
+.export-options {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.quality-select {
+background: var(–panel2);
+border: 1px solid var(–border);
+border-radius: 6px;
+color: var(–text);
+padding: 10px 12px;
+font-family: ‘Space Mono’, monospace;
+font-size: 0.7rem;
+outline: none;
+cursor: pointer;
+width: 100%;
+transition: border-color 0.2s;
+}
+
+.quality-select:focus { border-color: var(–green); }
+
+/* BUTTONS */
+.btn {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+padding: 12px 16px;
+border-radius: 6px;
+border: none;
+font-family: ‘Syne’, sans-serif;
+font-weight: 700;
+font-size: 0.82rem;
+cursor: pointer;
+letter-spacing: 0.3px;
+transition: all 0.2s;
+width: 100%;
+}
+
+.btn-primary {
+background: var(–green);
+color: #000;
+}
+
+.btn-primary:hover { background: #1ed760; transform: translateY(-1px); }
+.btn-primary:disabled { background: #1a5c30; color: #333; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+background: transparent;
+color: var(–text);
+border: 1px solid var(–border);
+}
+
+.btn-secondary:hover { border-color: var(–muted); background: var(–panel2); }
+
+.btn-accent {
+background: var(–accent);
+color: #fff;
+}
+
+.btn-accent:hover { background: #ff2255; transform: translateY(-1px); }
+
+/* PROGRESS */
+.progress-wrap {
+display: none;
+flex-direction: column;
+gap: 8px;
+}
+
+.progress-wrap.visible { display: flex; }
+
+.progress-bar-outer {
+width: 100%;
+height: 4px;
+background: var(–border);
+border-radius: 2px;
+overflow: hidden;
+}
+
+.progress-bar-inner {
+height: 100%;
+background: var(–green);
+border-radius: 2px;
+width: 0%;
+transition: width 0.15s;
+}
+
+.progress-label {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.6rem;
+color: var(–muted);
+text-align: center;
+}
+
+/* MEDIA THUMB */
+.media-thumb {
+display: none;
+align-items: center;
+gap: 10px;
+padding: 10px 12px;
+border: 1px solid var(–border);
+border-radius: 6px;
+background: var(–panel2);
+margin-top: 6px;
+}
+
+.media-thumb.visible { display: flex; }
+
+.media-thumb-img {
+width: 40px;
+height: 40px;
+border-radius: 4px;
+object-fit: cover;
+background: var(–border);
+flex-shrink: 0;
+}
+
+.media-thumb-info { flex: 1; overflow: hidden; }
+
+.media-thumb-name {
+font-size: 0.72rem;
+font-weight: 600;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.media-thumb-type {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.55rem;
+color: var(–muted);
+text-transform: uppercase;
+letter-spacing: 1px;
+margin-top: 2px;
+}
+
+.media-remove {
+background: transparent;
+border: none;
+color: var(–muted);
+cursor: pointer;
+font-size: 1rem;
+padding: 2px;
+transition: color 0.15s;
+}
+
+.media-remove:hover { color: var(–accent); }
+
+/* OVERLAY OPTIONS */
+.overlay-options {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.overlay-toggle {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 8px 0;
+cursor: pointer;
+}
+
+.overlay-toggle-label {
+font-size: 0.78rem;
+color: var(–text);
+}
+
+.toggle-switch {
+width: 32px;
+height: 18px;
+background: var(–border);
+border-radius: 9px;
+position: relative;
+transition: background 0.2s;
+cursor: pointer;
+flex-shrink: 0;
+}
+
+.toggle-switch.on { background: var(–green); }
+
+.toggle-switch::after {
+content: ‘’;
+position: absolute;
+width: 14px;
+height: 14px;
+border-radius: 50%;
+background: #fff;
+top: 2px;
+left: 2px;
+transition: left 0.2s;
+}
+
+.toggle-switch.on::after { left: 16px; }
+
+/* TOAST */
+.toast {
+position: fixed;
+bottom: 24px;
+left: 50%;
+transform: translateX(-50%) translateY(80px);
+background: var(–panel2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 12px 20px;
+font-size: 0.82rem;
+color: var(–text);
+z-index: 999;
+transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+display: flex;
+align-items: center;
+gap: 8px;
+white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(–green); }
+.toast.error { border-color: var(–accent); }
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+.app { grid-template-columns: 260px 1fr 220px; }
+}
+
+/* Scanlines overlay effect */
+.scanlines::after {
+content: ‘’;
+position: absolute;
+inset: 0;
+background: repeating-linear-gradient(
+0deg,
+transparent,
+transparent 2px,
+rgba(0,0,0,0.08) 2px,
+rgba(0,0,0,0.08) 4px
+);
+pointer-events: none;
+z-index: 10;
+}
+
+.vignette::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+pointer-events: none;
+z-index: 9;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 168 168" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="84" cy="84" r="84" fill="#1DB954"/>
+      <path d="M121.04 121.33c-1.64 0-2.77-.55-3.97-1.3-22.08-13.52-49.29-16.74-82.42-9.24-1.71.41-3.96 1.1-5.48-.41-1.51-1.51-1.1-3.42-.41-5.07 1.1-2.33 3.01-2.74 5.62-3.42 35.36-8.22 65.37-4.66 89.92 10.34 2.06 1.23 3.01 2.88 2.19 5.21-.69 1.78-2.33 3.89-5.45 3.89zm12.89-26.78c-2.06 0-3.56-.82-5.07-1.64-24.83-14.76-61.59-20.24-90.75-11.33-2.19.69-4.66 1.1-6.44-.96-1.78-2.05-1.1-5.07.69-6.72 2.06-1.92 4.25-2.33 7.13-3.15 32.07-9.65 72.07-3.97 99.56 13.38 2.33 1.37 3.56 3.42 2.61 6.17-.82 2.47-3.01 4.25-7.73 4.25zm14.08-30.33c-1.92 0-3.56-.55-5.21-1.51-27.02-16.4-71.24-20.51-104.09-11.33-2.19.55-5.07 1.1-6.99-1.51-1.78-2.19-1.64-5.62.55-7.68 1.92-1.78 4.39-2.33 7.68-3.15C77.79 30.37 126.66 35 157.29 53.13c2.88 1.64 4.39 4.53 3.15 7.68-1.1 2.74-3.56 4.39-12.43 4.39z" fill="#fff"/>
+    </svg>
+    Canvas<span>Studio</span>
+  </div>
+  <div class="header-tag">Spotify for Artists · Canvas Generator</div>
+  <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--muted);">9:16 · 3–8 SEC</div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT SIDEBAR -->
+
+  <div class="sidebar">
+
+```
+<!-- IMPORT -->
+<div class="section">
+  <div class="section-title">Importar Media</div>
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/mov" />
+    <div class="upload-icon">📁</div>
+    <div class="upload-text">
+      <strong>Arrastra o haz clic</strong><br>
+      Imágenes (JPG, PNG, WebP, GIF)<br>
+      Video (MP4, WebM)
+    </div>
+  </div>
+  <div class="media-thumb" id="mediaThumbnail">
+    <img class="media-thumb-img" id="thumbImg" src="" alt="">
+    <div class="media-thumb-info">
+      <div class="media-thumb-name" id="thumbName">—</div>
+      <div class="media-thumb-type" id="thumbType">—</div>
+    </div>
+    <button class="media-remove" id="removeMedia" title="Eliminar">✕</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="section">
+  <div class="section-title">Filtros</div>
+  <div class="filters-grid" id="filtersGrid">
+    <!-- Generated by JS -->
+  </div>
+</div>
+
+<!-- INTENSITY -->
+<div class="section">
+  <div class="section-title">Ajustes de Filtro</div>
+  <div class="slider-row">
+    <div class="slider-label"><span>Intensidad</span><span id="intensityVal">75%</span></div>
+    <input type="range" id="intensitySlider" min="0" max="100" value="75">
+  </div>
+  <div class="slider-row" style="margin-top:12px;">
+    <div class="slider-label"><span>Brillo</span><span id="brightnessVal">100%</span></div>
+    <input type="range" id="brightnessSlider" min="50" max="150" value="100">
+  </div>
+  <div class="slider-row" style="margin-top:12px;">
+    <div class="slider-label"><span>Contraste</span><span id="contrastVal">100%</span></div>
+    <input type="range" id="contrastSlider" min="50" max="200" value="100">
+  </div>
+  <div class="slider-row" style="margin-top:12px;">
+    <div class="slider-label"><span>Saturación</span><span id="saturationVal">100%</span></div>
+    <input type="range" id="saturationSlider" min="0" max="200" value="100">
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="section">
+  <div class="section-title">Overlays</div>
+  <div class="overlay-options">
+    <div class="overlay-toggle" id="toggleScanlines">
+      <span class="overlay-toggle-label">Scanlines CRT</span>
+      <div class="toggle-switch" id="scanlinesToggle"></div>
+    </div>
+    <div class="overlay-toggle" id="toggleVignette">
+      <span class="overlay-toggle-label">Viñeta</span>
+      <div class="toggle-switch on" id="vignetteToggle"></div>
+    </div>
+    <div class="overlay-toggle" id="toggleGrain">
+      <span class="overlay-toggle-label">Grano de Película</span>
+      <div class="toggle-switch" id="grainToggle"></div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- CANVAS CENTER -->
+
+  <div class="canvas-area">
+    <div class="canvas-bg-grid"></div>
+    <div class="canvas-wrapper">
+      <div class="canvas-frame" id="canvasFrame">
+        <canvas id="mainCanvas" width="1080" height="1920" style="width:270px;height:480px;"></canvas>
+        <div class="canvas-placeholder" id="canvasPlaceholder">
+          <div class="icon">🎵</div>
+          <p>Importa una imagen o video<br>para comenzar</p>
+        </div>
+      </div>
+      <div class="canvas-info">Canvas Spotify · 1080 × 1920 · 9:16</div>
+
+```
+  <!-- Playback bar for video -->
+  <div class="playback-bar" id="playbackBar" style="display:none;">
+    <button class="play-btn" id="playBtn">
+      <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+        <path d="M1 1L11 7L1 13V1Z" fill="#000"/>
+      </svg>
+    </button>
+    <div class="playback-track" id="progressTrack">
+      <div class="playback-fill" id="progressFill"></div>
+    </div>
+    <div class="time-label" id="timeLabel">0:00</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+
+  <div class="right-panel">
+
+```
+<!-- FORMAT -->
+<div class="section">
+  <div class="section-title">Formato Canvas</div>
+  <div class="size-options">
+    <div class="size-option active" data-w="1080" data-h="1920">
+      <div class="size-icon"></div>
+      <div class="size-info">
+        <div class="size-name">Spotify Canvas</div>
+        <div class="size-dims">1080 × 1920 · 9:16</div>
+      </div>
+    </div>
+    <div class="size-option" data-w="1080" data-h="1080">
+      <div class="size-icon" style="height:20px;"></div>
+      <div class="size-info">
+        <div class="size-name">Cuadrado</div>
+        <div class="size-dims">1080 × 1080 · 1:1</div>
+      </div>
+    </div>
+    <div class="size-option" data-w="1920" data-h="1080">
+      <div class="size-icon" style="width:28px;height:16px;"></div>
+      <div class="size-info">
+        <div class="size-name">Landscape</div>
+        <div class="size-dims">1920 × 1080 · 16:9</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="section">
+  <div class="section-title">Exportar</div>
+  <div class="export-options">
+
+    <div style="margin-bottom:4px;">
+      <div class="slider-label" style="margin-bottom:6px;"><span>Calidad de Video</span></div>
+      <select class="quality-select" id="qualitySelect">
+        <option value="high">HD 1080p — Alta Calidad</option>
+        <option value="medium">HD 720p — Media</option>
+        <option value="low">480p — Rápido</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:4px;">
+      <div class="slider-label" style="margin-bottom:6px;"><span>FPS</span></div>
+      <select class="quality-select" id="fpsSelect">
+        <option value="30">30 FPS</option>
+        <option value="24">24 FPS (Cine)</option>
+        <option value="60">60 FPS</option>
+      </select>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">Renderizando…</div>
+    </div>
+
+    <button class="btn btn-secondary" id="previewBtn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 4.5L9.5 7L5.5 9.5V4.5Z" fill="currentColor"/></svg>
+      Vista Previa
+    </button>
+
+    <button class="btn btn-primary" id="exportImageBtn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1V9M7 9L4 6M7 9L10 6" stroke="#000" stroke-width="1.5" stroke-linecap="round"/><path d="M1 11H13" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Descargar PNG
+    </button>
+
+    <button class="btn btn-accent" id="exportVideoBtn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="9" height="8" rx="1" stroke="#fff" stroke-width="1.3"/><path d="M10 5.5L13 4V10L10 8.5V5.5Z" stroke="#fff" stroke-width="1.3"/></svg>
+      Exportar MP4 HD
+    </button>
+
+  </div>
+</div>
+
+<!-- TIPS -->
+<div class="section">
+  <div class="section-title">Guía Spotify Canvas</div>
+  <div style="font-size:0.72rem;color:var(--muted);line-height:1.7;">
+    <div style="margin-bottom:8px;">📐 <strong style="color:var(--text);">Ratio 9:16</strong> — Formato vertical obligatorio</div>
+    <div style="margin-bottom:8px;">⏱ <strong style="color:var(--text);">3–8 segundos</strong> — Duración recomendada</div>
+    <div style="margin-bottom:8px;">🔁 <strong style="color:var(--text);">Loop perfecto</strong> — El Canvas se repite</div>
+    <div style="margin-bottom:8px;">🔇 <strong style="color:var(--text);">Sin audio</strong> — Solo visual</div>
+    <div>📦 <strong style="color:var(--text);">Máx. 15MB</strong> — Formato MP4/HEVC</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- Toast -->
+
+<div class="toast" id="toast">✓ Listo</div>
+
+<!-- Hidden video element -->
+
+<video id="hiddenVideo" style="display:none;" loop muted playsinline></video>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const state = {
+  mediaType: null, // 'image' | 'video'
+  mediaFile: null,
+  imageBitmap: null,
+  activeFilter: 'none',
+  intensity: 0.75,
+  brightness: 1,
+  contrast: 1,
+  saturation: 1,
+  overlays: { scanlines: false, vignette: true, grain: false },
+  isPlaying: false,
+  canvasW: 1080,
+  canvasH: 1920,
+  animFrame: null,
+  grainSeed: 0
+};
+
+// ═══════════════════════════════════════════
+// FILTERS DEFINITION
+// ═══════════════════════════════════════════
+const FILTERS = [
+  {
+    id: 'none',
+    label: 'Original',
+    swatch: 'swatch-none',
+    apply: (ctx, w, h, t, intensity) => { /* no-op */ }
+  },
+  {
+    id: 'vintage',
+    label: 'Vintage',
+    swatch: 'swatch-vintage',
+    apply: (ctx, w, h, t, intensity) => {
+      // Sepia + warm overlay
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        d[i]   = Math.min(255, (r * 0.393 + g * 0.769 + b * 0.189) * (1 - intensity) + (r * 0.393 + g * 0.769 + b * 0.189) * intensity);
+        d[i+1] = Math.min(255, (r * 0.349 + g * 0.686 + b * 0.168) * (1 - intensity) + (r * 0.349 + g * 0.686 + b * 0.168) * intensity);
+        d[i+2] = Math.min(255, (r * 0.272 + g * 0.534 + b * 0.131) * (1 - intensity) + b * (1 - intensity));
+        // Keep mix with original for intensity
+        d[i]   = Math.min(255, r * (1-intensity) + d[i] * intensity);
+        d[i+1] = Math.min(255, g * (1-intensity) + d[i+1] * intensity);
+        d[i+2] = Math.min(255, b * (1-intensity) + d[i+2] * intensity);
+      }
+      ctx.putImageData(img, 0, 0);
+      // Warm gradient overlay
+      const grd = ctx.createLinearGradient(0, 0, w, h);
+      grd.addColorStop(0, `rgba(255,180,60,${0.12 * intensity})`);
+      grd.addColorStop(1, `rgba(160,80,20,${0.15 * intensity})`);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, w, h);
+    }
+  },
+  {
+    id: 'noir',
+    label: 'Cine Noir',
+    swatch: 'swatch-noir',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const grey = 0.299 * r + 0.587 * g + 0.114 * b;
+        // High contrast B&W
+        const hc = Math.min(255, Math.max(0, (grey - 128) * (1 + intensity * 0.8) + 128));
+        d[i]   = Math.round(r * (1-intensity) + hc * intensity);
+        d[i+1] = Math.round(g * (1-intensity) + hc * intensity);
+        d[i+2] = Math.round(b * (1-intensity) + hc * intensity);
+      }
+      ctx.putImageData(img, 0, 0);
+      // Dramatic shadow overlay
+      const grd = ctx.createRadialGradient(w*0.5, h*0.5, h*0.1, w*0.5, h*0.5, h*0.7);
+      grd.addColorStop(0, `rgba(0,0,0,0)`);
+      grd.addColorStop(1, `rgba(0,0,0,${0.6 * intensity})`);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, w, h);
+    }
+  },
+  {
+    id: 'vivid',
+    label: 'Vivid',
+    swatch: 'swatch-vivid',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        d[i]   = Math.min(255, r + (r - 128) * intensity * 0.5);
+        d[i+1] = Math.min(255, g + (g - 128) * intensity * 0.5);
+        d[i+2] = Math.min(255, b + (b - 128) * intensity * 0.5);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+  },
+  {
+    id: 'faded',
+    label: 'Faded',
+    swatch: 'swatch-faded',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const lift = 40 * intensity;
+        d[i]   = Math.min(255, d[i]   * (1 - intensity * 0.3) + lift);
+        d[i+1] = Math.min(255, d[i+1] * (1 - intensity * 0.3) + lift);
+        d[i+2] = Math.min(255, d[i+2] * (1 - intensity * 0.3) + lift * 1.1);
+      }
+      ctx.putImageData(img, 0, 0);
+      ctx.fillStyle = `rgba(200,210,230,${0.1 * intensity})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  },
+  {
+    id: 'neon',
+    label: 'Neon',
+    swatch: 'swatch-neon',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        // Boost specific channels
+        d[i]   = Math.min(255, r + r * intensity * 0.4);
+        d[i+1] = Math.min(255, g * (1 - intensity * 0.3));
+        d[i+2] = Math.min(255, b + b * intensity * 0.6);
+      }
+      ctx.putImageData(img, 0, 0);
+      // Neon teal/pink glows
+      const g1 = ctx.createRadialGradient(w*0.2, h*0.3, 0, w*0.2, h*0.3, w*0.5);
+      g1.addColorStop(0, `rgba(255,0,200,${0.15 * intensity})`);
+      g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1; ctx.fillRect(0,0,w,h);
+      const g2 = ctx.createRadialGradient(w*0.8, h*0.7, 0, w*0.8, h*0.7, w*0.5);
+      g2.addColorStop(0, `rgba(0,255,220,${0.15 * intensity})`);
+      g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2; ctx.fillRect(0,0,w,h);
+    }
+  },
+  {
+    id: 'matte',
+    label: 'Matte',
+    swatch: 'swatch-matte',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        // Reduce saturation, lift blacks
+        const avg = (d[i] + d[i+1] + d[i+2]) / 3;
+        const lift = 20 * intensity;
+        d[i]   = Math.round(d[i]   * (1-intensity*0.4) + avg * intensity*0.4) + lift * (1 - d[i]/255);
+        d[i+1] = Math.round(d[i+1] * (1-intensity*0.4) + avg * intensity*0.4) + lift * (1 - d[i+1]/255);
+        d[i+2] = Math.round(d[i+2] * (1-intensity*0.4) + avg * intensity*0.4) + lift * (1 - d[i+2]/255);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+  },
+  {
+    id: 'golden',
+    label: 'Golden',
+    swatch: 'swatch-golden',
+    apply: (ctx, w, h, t, intensity) => {
+      ctx.fillStyle = `rgba(245, 180, 30, ${0.2 * intensity})`;
+      ctx.fillRect(0, 0, w, h);
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i]   = Math.min(255, d[i] * (1 + 0.2 * intensity));
+        d[i+1] = Math.min(255, d[i+1] * (1 + 0.05 * intensity));
+        d[i+2] = Math.min(255, d[i+2] * (1 - 0.2 * intensity));
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+  },
+  {
+    id: 'cold',
+    label: 'Cold',
+    swatch: 'swatch-cold',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i]   = Math.max(0, d[i]   - 30 * intensity);
+        d[i+1] = Math.max(0, d[i+1] - 10 * intensity);
+        d[i+2] = Math.min(255, d[i+2] + 40 * intensity);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+  },
+  {
+    id: 'warm',
+    label: 'Warm',
+    swatch: 'swatch-warm',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i]   = Math.min(255, d[i]   + 40 * intensity);
+        d[i+1] = Math.min(255, d[i+1] + 10 * intensity);
+        d[i+2] = Math.max(0, d[i+2]   - 30 * intensity);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+  },
+  {
+    id: 'dreamy',
+    label: 'Dreamy',
+    swatch: 'swatch-dreamy',
+    apply: (ctx, w, h, t, intensity) => {
+      // Pastel wash + soft glow
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const lift = 60 * intensity;
+        d[i]   = Math.min(255, d[i]   * (1 - intensity * 0.3) + lift);
+        d[i+1] = Math.min(255, d[i+1] * (1 - intensity * 0.2) + lift * 0.9);
+        d[i+2] = Math.min(255, d[i+2] * (1 - intensity * 0.1) + lift * 1.1);
+      }
+      ctx.putImageData(img, 0, 0);
+      // Pink dreamy top
+      const g1 = ctx.createLinearGradient(0, 0, w, h);
+      g1.addColorStop(0, `rgba(255,160,220,${0.1*intensity})`);
+      g1.addColorStop(0.5, 'transparent');
+      g1.addColorStop(1, `rgba(160,200,255,${0.1*intensity})`);
+      ctx.fillStyle = g1; ctx.fillRect(0,0,w,h);
+    }
+  },
+  {
+    id: 'dark',
+    label: 'Dark Moody',
+    swatch: 'swatch-dark',
+    apply: (ctx, w, h, t, intensity) => {
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i]   = Math.max(0, d[i]   * (1 - intensity * 0.5));
+        d[i+1] = Math.max(0, d[i+1] * (1 - intensity * 0.5));
+        d[i+2] = Math.min(255, d[i+2] * (1 - intensity * 0.3) + 20 * intensity);
+      }
+      ctx.putImageData(img, 0, 0);
+      // Deep shadow
+      const g1 = ctx.createRadialGradient(w*0.5, h*0.5, 0, w*0.5, h*0.5, h*0.6);
+      g1.addColorStop(0, 'transparent');
+      g1.addColorStop(1, `rgba(0,0,10,${0.7*intensity})`);
+      ctx.fillStyle = g1; ctx.fillRect(0,0,w,h);
+    }
+  }
+];
+
+// ═══════════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════════
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const placeholder = document.getElementById('canvasPlaceholder');
+const video = document.getElementById('hiddenVideo');
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const mediaThumbnail = document.getElementById('mediaThumbnail');
+const thumbImg = document.getElementById('thumbImg');
+const thumbName = document.getElementById('thumbName');
+const thumbType = document.getElementById('thumbType');
+const removeMedia = document.getElementById('removeMedia');
+const playbackBar = document.getElementById('playbackBar');
+const playBtn = document.getElementById('playBtn');
+const progressFill = document.getElementById('progressFill');
+const timeLabel = document.getElementById('timeLabel');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+const toast = document.getElementById('toast');
+
+// ═══════════════════════════════════════════
+// INIT FILTERS
+// ═══════════════════════════════════════════
+const filtersGrid = document.getElementById('filtersGrid');
+FILTERS.forEach(f => {
+  const btn = document.createElement('div');
+  btn.className = 'filter-btn' + (f.id === 'none' ? ' active' : '');
+  btn.dataset.filter = f.id;
+  btn.innerHTML = `
+    <div class="filter-preview">
+      <div class="filter-swatch ${f.swatch}"></div>
+    </div>
+    <div class="filter-label">${f.label}</div>
+  `;
+  btn.addEventListener('click', () => selectFilter(f.id));
+  filtersGrid.appendChild(btn);
+});
+
+// ═══════════════════════════════════════════
+// FILTER SELECTION
+// ═══════════════════════════════════════════
+function selectFilter(id) {
+  state.activeFilter = id;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === id);
+  });
+  renderFrame();
+}
+
+// ═══════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+removeMedia.addEventListener('click', () => {
+  clearMedia();
+  showToast('Media eliminada', 'success');
+});
+
+function clearMedia() {
+  state.mediaType = null;
+  state.mediaFile = null;
+  state.imageBitmap = null;
+  video.src = '';
+  fileInput.value = '';
+  placeholder.style.display = 'flex';
+  canvas.style.display = 'none';
+  mediaThumbnail.classList.remove('visible');
+  playbackBar.style.display = 'none';
+  if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+  if (!isImage && !isVideo) { showToast('Formato no soportado', 'error'); return; }
+
+  state.mediaFile = file;
+  thumbName.textContent = file.name.length > 24 ? file.name.substring(0, 24) + '…' : file.name;
+  thumbType.textContent = isImage ? '🖼 Imagen' : '🎬 Video';
+
+  if (isImage) {
+    state.mediaType = 'image';
+    const bitmap = await createImageBitmap(file);
+    state.imageBitmap = bitmap;
+    thumbImg.src = URL.createObjectURL(file);
+    mediaThumbnail.classList.add('visible');
+    placeholder.style.display = 'none';
+    canvas.style.display = 'block';
+    playbackBar.style.display = 'none';
+    renderFrame();
+  } else if (isVideo) {
+    state.mediaType = 'video';
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.load();
+    thumbImg.src = '';
+    thumbImg.style.background = '#2a2a2a';
+    thumbImg.alt = '🎬';
+    mediaThumbnail.classList.add('visible');
+    video.onloadedmetadata = () => {
+      placeholder.style.display = 'none';
+      canvas.style.display = 'block';
+      playbackBar.style.display = 'flex';
+      state.isPlaying = false;
+      updatePlayBtn();
+      startVideoLoop();
+      showToast('Video cargado ✓', 'success');
+    };
+  }
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function renderFrame(t) {
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Draw source
+  if (state.mediaType === 'image' && state.imageBitmap) {
+    const bw = state.imageBitmap.width;
+    const bh = state.imageBitmap.height;
+    // Cover fit
+    const scale = Math.max(w / bw, h / bh);
+    const sw = bw * scale, sh = bh * scale;
+    ctx.drawImage(state.imageBitmap, (w - sw) / 2, (h - sh) / 2, sw, sh);
+  } else if (state.mediaType === 'video' && !video.paused) {
+    const vw = video.videoWidth || w;
+    const vh = video.videoHeight || h;
+    const scale = Math.max(w / vw, h / vh);
+    const sw = vw * scale, sh = vh * scale;
+    ctx.drawImage(video, (w - sw) / 2, (h - sh) / 2, sw, sh);
+  } else if (state.mediaType === 'video') {
+    const vw = video.videoWidth || w;
+    const vh = video.videoHeight || h;
+    const scale = Math.max(w / vw, h / vh);
+    const sw = vw * scale, sh = vh * scale;
+    ctx.drawImage(video, (w - sw) / 2, (h - sh) / 2, sw, sh);
+  }
+
+  // Apply brightness/contrast/saturation first via ImageData
+  applyBasicAdjustments();
+
+  // Apply active filter
+  const filter = FILTERS.find(f => f.id === state.activeFilter);
+  if (filter) filter.apply(ctx, w, h, Date.now() * 0.001, state.intensity);
+
+  // Overlays
+  applyOverlays(w, h);
+}
+
+function applyBasicAdjustments() {
+  if (state.brightness === 1 && state.contrast === 1 && state.saturation === 1) return;
+  const w = canvas.width, h = canvas.height;
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const b = state.brightness;
+  const c = state.contrast;
+  const s = state.saturation;
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], bl = d[i+2];
+    // Brightness
+    r = r * b; g = g * b; bl = bl * b;
+    // Contrast
+    r = (r - 128) * c + 128;
+    g = (g - 128) * c + 128;
+    bl = (bl - 128) * c + 128;
+    // Saturation
+    const lum = 0.299 * r + 0.587 * g + 0.114 * bl;
+    r = lum + (r - lum) * s;
+    g = lum + (g - lum) * s;
+    bl = lum + (bl - lum) * s;
+    d[i]   = Math.max(0, Math.min(255, r));
+    d[i+1] = Math.max(0, Math.min(255, g));
+    d[i+2] = Math.max(0, Math.min(255, bl));
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function applyOverlays(w, h) {
+  // Vignette
+  if (state.overlays.vignette) {
+    const grd = ctx.createRadialGradient(w/2, h/2, h*0.2, w/2, h/2, h*0.8);
+    grd.addColorStop(0, 'rgba(0,0,0,0)');
+    grd.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+  }
+  // Scanlines
+  if (state.overlays.scanlines) {
+    ctx.save();
+    for (let y = 0; y < h; y += 4) {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(0, y, w, 2);
+    }
+    ctx.restore();
+  }
+  // Grain
+  if (state.overlays.grain) {
+    applyGrain(w, h);
+  }
+}
+
+function applyGrain(w, h) {
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const seed = state.grainSeed;
+  const amount = 25;
+  for (let i = 0; i < d.length; i += 4) {
+    const noise = (Math.random() - 0.5) * amount;
+    d[i]   = Math.max(0, Math.min(255, d[i]   + noise));
+    d[i+1] = Math.max(0, Math.min(255, d[i+1] + noise));
+    d[i+2] = Math.max(0, Math.min(255, d[i+2] + noise));
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ═══════════════════════════════════════════
+// VIDEO LOOP
+// ═══════════════════════════════════════════
+function startVideoLoop() {
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  const loop = () => {
+    if (state.mediaType === 'video') {
+      state.grainSeed++;
+      renderFrame();
+      // Update playback bar
+      if (video.duration) {
+        const pct = (video.currentTime / video.duration) * 100;
+        progressFill.style.width = pct + '%';
+        const m = Math.floor(video.currentTime / 60);
+        const s = Math.floor(video.currentTime % 60).toString().padStart(2, '0');
+        timeLabel.textContent = `${m}:${s}`;
+      }
+    }
+    state.animFrame = requestAnimationFrame(loop);
+  };
+  state.animFrame = requestAnimationFrame(loop);
+}
+
+// PLAY/PAUSE
+playBtn.addEventListener('click', () => {
+  if (state.mediaType !== 'video') return;
+  if (video.paused) { video.play(); state.isPlaying = true; }
+  else { video.pause(); state.isPlaying = false; }
+  updatePlayBtn();
+});
+
+function updatePlayBtn() {
+  playBtn.innerHTML = state.isPlaying
+    ? `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><rect x="1" y="1" width="3" height="12" rx="1" fill="#000"/><rect x="8" y="1" width="3" height="12" rx="1" fill="#000"/></svg>`
+    : `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M1 1L11 7L1 13V1Z" fill="#000"/></svg>`;
+}
+
+// ═══════════════════════════════════════════
+// SLIDERS
+// ═══════════════════════════════════════════
+document.getElementById('intensitySlider').addEventListener('input', e => {
+  state.intensity = e.target.value / 100;
+  document.getElementById('intensityVal').textContent = e.target.value + '%';
+  renderFrame();
+});
+
+document.getElementById('brightnessSlider').addEventListener('input', e => {
+  state.brightness = e.target.value / 100;
+  document.getElementById('brightnessVal').textContent = e.target.value + '%';
+  renderFrame();
+});
+
+document.getElementById('contrastSlider').addEventListener('input', e => {
+  state.contrast = e.target.value / 100;
+  document.getElementById('contrastVal').textContent = e.target.value + '%';
+  renderFrame();
+});
+
+document.getElementById('saturationSlider').addEventListener('input', e => {
+  state.saturation = e.target.value / 100;
+  document.getElementById('saturationVal').textContent = e.target.value + '%';
+  renderFrame();
+});
+
+// ═══════════════════════════════════════════
+// TOGGLES
+// ═══════════════════════════════════════════
+document.getElementById('toggleScanlines').addEventListener('click', () => {
+  state.overlays.scanlines = !state.overlays.scanlines;
+  document.getElementById('scanlinesToggle').classList.toggle('on', state.overlays.scanlines);
+  renderFrame();
+});
+
+document.getElementById('toggleVignette').addEventListener('click', () => {
+  state.overlays.vignette = !state.overlays.vignette;
+  document.getElementById('vignetteToggle').classList.toggle('on', state.overlays.vignette);
+  renderFrame();
+});
+
+document.getElementById('toggleGrain').addEventListener('click', () => {
+  state.overlays.grain = !state.overlays.grain;
+  document.getElementById('grainToggle').classList.toggle('on', state.overlays.grain);
+  renderFrame();
+});
+
+// ═══════════════════════════════════════════
+// CANVAS SIZE OPTIONS
+// ═══════════════════════════════════════════
+document.querySelectorAll('.size-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.size-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    const w = parseInt(opt.dataset.w);
+    const h = parseInt(opt.dataset.h);
+    canvas.width = w; canvas.height = h; state.canvasW = w; state.canvasH = h;
+    // Display size proportional, max 480px tall
+    const maxH = 480, maxW = 270;
+    const ratio = w / h;
+    let dispH = maxH, dispW = maxH * ratio;
+    if (dispW > maxW * 1.5) { dispW = maxW * 1.5; dispH = dispW / ratio; }
+    canvas.style.width = dispW + 'px';
+    canvas.style.height = dispH + 'px';
+    renderFrame();
+  });
+});
+
+// ═══════════════════════════════════════════
+// EXPORT PNG
+// ═══════════════════════════════════════════
+document.getElementById('exportImageBtn').addEventListener('click', () => {
+  if (!state.mediaType) { showToast('Importa media primero', 'error'); return; }
+  renderFrame();
+  const link = document.createElement('a');
+  link.download = `canvas_${state.activeFilter}_${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('PNG descargado ✓', 'success');
+});
+
+// ═══════════════════════════════════════════
+// EXPORT MP4 via MediaRecorder
+// ═══════════════════════════════════════════
+document.getElementById('exportVideoBtn').addEventListener('click', async () => {
+  if (!state.mediaType) { showToast('Importa media primero', 'error'); return; }
+
+  const qualityMap = { high: 8000000, medium: 4000000, low: 1500000 };
+  const fpsMap = { '30': 30, '24': 24, '60': 60 };
+  const bitsPerSec = qualityMap[document.getElementById('qualitySelect').value] || 8000000;
+  const fps = fpsMap[document.getElementById('fpsSelect').value] || 30;
+
+  const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
+    : MediaRecorder.isTypeSupported('video/webm;codecs=h264') ? 'video/webm;codecs=h264'
+    : 'video/webm';
+
+  const stream = canvas.captureStream(fps);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitsPerSec });
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+  progressWrap.classList.add('visible');
+  progressBar.style.width = '0%';
+  progressLabel.textContent = 'Grabando…';
+
+  let duration = 0;
+  let totalFrames = 0;
+
+  if (state.mediaType === 'video' && video.duration) {
+    duration = Math.min(video.duration, 8) * 1000; // max 8s for Canvas
+    totalFrames = Math.ceil((duration / 1000) * fps);
+    video.currentTime = 0;
+    await video.play();
+  } else {
+    // Image: loop 4 seconds
+    duration = 4000;
+    totalFrames = Math.ceil(4 * fps);
+  }
+
+  recorder.start();
+  const startTime = performance.now();
+  let frameCount = 0;
+
+  const recordLoop = () => {
+    const elapsed = performance.now() - startTime;
+    const pct = Math.min((elapsed / duration) * 100, 99);
+    progressBar.style.width = pct + '%';
+    progressLabel.textContent = `Renderizando… ${Math.round(pct)}%`;
+
+    state.grainSeed++;
+    renderFrame();
+    frameCount++;
+
+    if (elapsed < duration) {
+      setTimeout(recordLoop, 1000 / fps);
+    } else {
+      recorder.stop();
+      if (state.mediaType === 'video') video.pause();
+    }
+  };
+
+  recordLoop();
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: mimeType });
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spotify_canvas_${state.activeFilter}_${Date.now()}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    progressWrap.classList.remove('visible');
+    progressBar.style.width = '0%';
+    showToast('Video exportado ✓', 'success');
+  };
+});
+
+// ═══════════════════════════════════════════
+// PREVIEW (plays video / animates image)
+// ═══════════════════════════════════════════
+document.getElementById('previewBtn').addEventListener('click', () => {
+  if (!state.mediaType) { showToast('Importa media primero', 'error'); return; }
+  if (state.mediaType === 'video') {
+    if (video.paused) { video.play(); state.isPlaying = true; }
+    else { video.pause(); state.isPlaying = false; }
+    updatePlayBtn();
+  } else {
+    showToast('Imagen renderizada en canvas ✓', 'success');
+    renderFrame();
+  }
+});
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'success') {
+  toast.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  toast.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════
+// INIT CANVAS
+// ═══════════════════════════════════════════
+canvas.style.display = 'none';
+placeholder.style.display = 'flex';
+</script>
+
+</body>
+</html>
