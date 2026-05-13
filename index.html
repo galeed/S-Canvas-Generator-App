@@ -1546,9 +1546,9 @@ document.getElementById('exportVideoBtn').addEventListener('click', async () => 
     video.currentTime = 0;
     await video.play();
   } else {
-    // Image: loop 4 seconds
-    duration = 4000;
-    totalFrames = Math.ceil(4 * fps);
+    // Image: loop 8 seconds
+    duration = 8000;
+    totalFrames = Math.ceil(8 * fps);
   }
 
   recorder.start();
