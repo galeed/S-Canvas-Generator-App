@@ -1489,8 +1489,8 @@ document.querySelectorAll('.size-option').forEach(opt => {
     const w = parseInt(opt.dataset.w);
     const h = parseInt(opt.dataset.h);
     canvas.width = w; canvas.height = h; state.canvasW = w; state.canvasH = h;
-    // Display size proportional, max 480px tall
-    const maxH = 480, maxW = 270;
+    // Display size proportional, max 720px tall
+    const maxH = 1280, maxW = 720;
     const ratio = w / h;
     let dispH = maxH, dispW = maxH * ratio;
     if (dispW > maxW * 1.5) { dispW = maxW * 1.5; dispH = dispW / ratio; }
